@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1020">
+  <title>Play · GameNest</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="play">
+  <header class="bar">
+    <a class="ibtn" href="./" title="All games" aria-label="All games">←</a>
+    <div class="gtitle"><span id="gIcon"></span><span class="t" id="gName"></span></div>
+    <div class="stats" id="stats">
+      <div class="stat" id="scoreBox"><small id="scoreLbl">Score</small><b id="score">0</b></div>
+      <div class="stat"><small>Best</small><b id="best">–</b></div>
+    </div>
+    <button class="ibtn" id="btnPause" title="Pause (Esc)" aria-label="Pause" hidden>⏸</button>
+    <button class="ibtn" id="btnRestart" title="Restart" aria-label="Restart">↻</button>
+    <button class="ibtn" id="btnHelp" title="How to play" aria-label="How to play">?</button>
+    <button class="ibtn" id="btnSound" title="Sound" aria-label="Toggle sound">🔊</button>
+    <button class="ibtn" id="btnFs" title="Fullscreen" aria-label="Fullscreen">⛶</button>
+  </header>
+  <div class="status" id="status"></div>
+  <main class="stage" id="stage"></main>
+  <div class="pad" id="pad"></div>
+  <div class="overlay" id="overlay" hidden><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
+  <div class="toast" id="toast"></div>
+  <script src="js/core.js"></script>
+  <script src="js/registry.js"></script>
+  <script src="js/engine.js"></script>
+</body>
+</html>
