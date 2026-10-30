@@ -1,6 +1,8 @@
 # GameNest · Mini Games
 
-A collection of **104 free mini games** that run in the browser on laptops and phones. It's plain HTML, CSS and JavaScript, so there's no build step, no install and no tracking.
+A collection of **100 free mini games** that run in the browser on laptops and phones. It's plain HTML, CSS and JavaScript, so there's no build step, no install and no tracking.
+
+Each game appears once. Games with several modes (difficulty, board size, 1 or 2 players) open a picker, so Sudoku is one card with Easy / Medium / Hard, not three.
 
 ## Play
 
@@ -17,12 +19,12 @@ python -m http.server 8000
 
 | Category | Games |
 |---|---|
-| 🕹️ Arcade (27) | Snake ×4, Breakout ×2, Pong ×3 (incl. 2-player), Flappy Wings ×2, Alien Invaders, Asteroid Blaster, Dino Dash, Block Drop ×2, Whack-a-Mole ×2, Sky Hop, Road Cross, Cave Flyer, Stack Tower, Fruit Catcher, Dodge Orbs, Aim Trainer, Highway Racer, Bubble Shooter |
-| 🧩 Puzzle (37) | 2048 ×4, Sudoku ×3, Minesweeper ×3, Sliding puzzles ×3, Lights Out ×2, Memory ×4, Flood It ×3, Tower of Hanoi ×3, Box Pusher (12 Sokoban levels), Maze Runner ×3, Pipe Connect ×3, Gem Swap, Collapse, Nonogram ×2, Peg Solitaire |
-| ♟️ Board (15) | Tic-Tac-Toe ×3, Connect Four ×2, Reversi ×2, Checkers ×2, Gomoku ×2, Dots and Boxes ×2, Mancala ×2. All have a CPU opponent, and most have a 2-player mode |
-| 🃏 Cards & Dice (7) | Solitaire (draw 1 / draw 3), Blackjack, Higher or Lower, Pig Dice ×2, Rock Paper Scissors |
-| 🔤 Word (6) | Word Guess, Hangman, Word Scramble, Typing Speed, Word Search ×2 |
-| 🧠 Brain (12) | Simon ×2, Code Breaker ×2, Quick Math ×2, Reaction Time, Color Match, Number Memory, Number Hunt ×2, Pattern Memory |
+| 🕹️ Arcade (31) | Snake, Breakout, Pong, Flappy Wings, Alien Invaders, Asteroid Blaster, Dino Dash, Block Drop, Whack-a-Mole, Sky Hop, Road Cross, Cave Flyer, Stack Tower, Fruit Catcher, Dodge Orbs, Aim Trainer, Highway Racer, Bubble Shooter, Hoops, Fruit Slice, Pac-Maze, Moon Lander, Missile Defense, Air Hockey, Piano Tiles, Balloon Pop, Slingshot, Mini Golf, Plinko, Turret Defense, Fruit Merge |
+| 🧩 Puzzle (22) | 2048, Sudoku, Minesweeper, Sliding Puzzle, Lights Out, Memory Match, Flood It, Tower of Hanoi, Box Pusher, Maze Runner, Pipe Connect, Gem Swap, Collapse, Nonogram, Peg Solitaire, Water Sort, Unblock, N-Queens, Binary Puzzle, Knight's Tour, Ice Slide, Block Fit |
+| ♟️ Board (10) | Tic-Tac-Toe, Connect Four, Reversi, Checkers, Gomoku, Dots and Boxes, Mancala, Chess, Battleship, Snakes & Ladders. All have a CPU opponent, and most have a 2-player mode |
+| 🃏 Cards & Dice (11) | Solitaire, Blackjack, Higher or Lower, Pig Dice, Rock Paper Scissors, Lucky Slots, Video Poker, Yahtzee, War, Roulette, Crazy Eights |
+| 🔤 Word (11) | Word Guess, Hangman, Word Scramble, Typing Speed, Word Search, Word Hunt, Word Rain, Spelling Bee, General Trivia, Science Quiz, World Capitals |
+| 🧠 Brain (15) | Simon Says, Code Breaker, Quick Math, Reaction Time, Color Match, Number Memory, Number Hunt, Pattern Memory, Colour Clash, N-Back, Chimp Memory, Odd Colour Out, Quick Count, Number Sequence, Make 24 |
 
 Every game has:
 
@@ -52,7 +54,9 @@ login.html          sign in / create account
 js/login.js         login page logic
 js/fx3d.js          2.5D canvas effects
 js/core.js          accounts, per-user storage + catalog helpers
-js/registry.js      the list of games, their variants and how-to text
+js/registry.js      the first set of games, their modes and how-to text
+js/registry_more.js the newer games (same format)
+js/groups.js        names each game and its modes; builds the one-card-per-game catalog
 js/hub.js           home page logic
 js/engine.js        player runtime: canvas scaling, input, touch pad, scores, sound, overlays
 games/*.js          one file per game engine (variants share an engine)
@@ -73,4 +77,4 @@ games/_words.js     word lists for the word games
    });
    ```
 
-2. Add an entry in `js/registry.js` with `Hub.add('mygame', 'my-id', 'Name', 'arcade', '🎮', ['#c1', '#c2'], 'Short description', 'How to play')`.
+2. Add an entry in `js/registry_more.js` with `Hub.add('mygame', 'my-id', 'Name', 'arcade', '🎮', ['#c1', '#c2'], 'Short description', 'How to play')`.

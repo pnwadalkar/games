@@ -48,11 +48,19 @@
       <div class="empty" id="empty" hidden>No games match your search.</div>
     </section>
 
-    <div class="foot">GameNest · all games run offline in your browser · scores are saved on this device</div>
+    <div class="foot">GameNest · all games run in your browser · scores are saved on this device (per account)</div>
   </div>
 
+  <div class="overlay" id="pick" hidden>
+    <div class="modal pick" role="dialog" aria-modal="true" aria-label="Choose a mode">
+      <button class="x" id="pickClose" aria-label="Close">✕</button>
+      <div id="pickBody"></div>
+    </div>
+  </div>
   <script src="js/core.js"></script>
   <script src="js/registry.js"></script>
+  <script src="js/registry_more.js"></script>
+  <script src="js/groups.js"></script>
   <script src="js/hub.js"></script>
 </body>
 </html>

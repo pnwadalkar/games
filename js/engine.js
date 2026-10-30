@@ -38,6 +38,29 @@
       ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
     },
     hit: (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y,
+    inR: (x, y, r) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h,
+    // Raised button with a lip; pressed / disabled states sink or fade it.
+    btn(ctx, r, label, color, size, off) {
+      const col = off ? '#3a4272' : (color || '#7c5cff'), lip = off ? 3 : 6;
+      ctx.__flat = true;
+      ctx.fillStyle = U.shade(col, -.45); U.rr(ctx, r.x, r.y + lip, r.w, r.h, Math.min(16, r.h / 2)); ctx.fill();
+      const g = ctx.createLinearGradient(0, r.y, 0, r.y + r.h);
+      g.addColorStop(0, U.shade(col, .22)); g.addColorStop(1, col);
+      ctx.fillStyle = g; U.rr(ctx, r.x, r.y, r.w, r.h, Math.min(16, r.h / 2)); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.2)'; U.rr(ctx, r.x + 3, r.y + 2, r.w - 6, r.h * .38, Math.min(12, r.h / 3)); ctx.fill();
+      ctx.__flat = false;
+      U.text(ctx, label, r.x + r.w / 2, r.y + r.h / 2 + 1, size || Math.min(22, r.h * .42), off ? '#7b84b8' : '#fff', 'center', 800);
+    },
+    // Word-wrapped centred text; returns the y after the last line.
+    wrap(ctx, s, x, y, maxW, lh, size, color, align) {
+      ctx.font = '700 ' + size + 'px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+      const words = String(s).split(' '); let line = '';
+      const lines = [];
+      words.forEach(w => { const t = line ? line + ' ' + w : w; if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t; });
+      lines.push(line);
+      lines.forEach((l, i) => U.text(ctx, l, x, y + i * lh, size, color, align || 'center', 700));
+      return y + lines.length * lh;
+    },
     // ---- 2.5D drawing helpers ----
     // shade(color, k): lighten (k > 0) or darken (k < 0) any CSS colour; returns an rgb() string.
     shade(color, k) {
@@ -594,9 +617,13 @@
   const loadNext = () => loadScript(files.shift(), () => (files.length ? loadNext() : ready()));
   const ready = () => {
     const b = Hub.LS.get(bestKey, null);
+    const G = Hub.groupOf(meta.id);
+    const modes = G && G.variants.length > 1
+      ? '<div class="var-row">' + G.variants.map(v => '<a class="' + (v.id === meta.id ? 'on' : '') + '" href="play.html?g=' + encodeURIComponent(v.id) + '">' + v.vlabel + '</a>').join('') + '</div>'
+      : '';
     showModal({
       emoji: meta.icon, title: meta.name,
-      html: '<p>' + meta.desc + '</p><div class="how">' + meta.how + '</div>' +
+      html: modes + '<p>' + meta.desc + '</p><div class="how">' + meta.how + '</div>' +
         (b != null && meta.best !== 'none' ? '<p>Your best: <b>' + Hub.fmt(b, meta.fmt) + '</b></p>' : ''),
       buttons: [{ label: 'Menu', fn: () => { location.href = './'; } }, { label: '▶  Play', primary: true, fn: start }]
     });

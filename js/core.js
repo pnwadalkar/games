@@ -119,6 +119,35 @@
   };
   Hub.find = id => Hub.GAMES.find(g => g.id === id);
 
+  // ---------- groups ----------
+  // The catalog shows one card per game. Entries that share a group (default: the engine) are modes of that
+  // game, e.g. Sudoku → Easy / Medium / Hard. Hub.LABELS names the group and each mode.
+  Hub.LABELS = {};
+  Hub.groups = [];
+  Hub.buildGroups = function () {
+    const map = new Map();
+    Hub.GAMES.forEach(g => {
+      const k = g.group || g.engine;
+      let G = map.get(k);
+      if (!G) {
+        G = { id: k, name: g.name, cat: g.cat, icon: g.icon, c1: g.c1, c2: g.c2, desc: g.desc, how: g.how, tags: g.tags || '', twoP: false, variants: [] };
+        map.set(k, G);
+      }
+      G.variants.push(g);
+      g.groupId = k;
+      if (g.twoP) G.twoP = true;
+    });
+    const order = c => Hub.CATS.findIndex(x => x.id === c);
+    Hub.groups = Array.from(map.values()).sort((a, b) => order(a.cat) - order(b.cat)); // stable: keeps catalog order inside a category
+    Hub.groups.forEach(G => {
+      const L = Hub.LABELS[G.id];
+      if (L) { G.name = L.name; if (L.desc) G.desc = L.desc; }
+      G.variants.forEach(v => { v.vlabel = (L && L.v && L.v[v.id]) || v.name; v.gname = G.name; });
+      G.search = (G.name + ' ' + G.desc + ' ' + G.cat + ' ' + G.tags + ' ' + G.variants.map(v => v.vlabel).join(' ')).toLowerCase();
+    });
+  };
+  Hub.groupOf = id => Hub.groups.find(G => G.id === id || G.variants.some(v => v.id === id));
+
   Hub.bestText = function (g) {
     const b = Hub.LS.get('best:' + g.id, null);
     if (b == null || g.best === 'none') return '';
