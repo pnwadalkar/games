@@ -6,8 +6,10 @@ Hub.register('snakesladders', (api, o) => {
   const LAD = { 4: 25, 13: 46, 33: 49, 42: 63, 50: 69, 62: 81, 74: 92 };
   const SNK = { 27: 5, 40: 3, 43: 18, 54: 31, 66: 45, 76: 58, 89: 53, 99: 41 };
   const cellPos = n => { const i = n - 1, r = Math.floor(i / 10), k = i % 10, col = r % 2 ? 9 - k : k; return [col * CS + CS / 2, B - r * CS - CS / 2]; };
-  const players = [{ pos: 0, show: 0, col: '#ff4d6d', name: 'You' }, { pos: 0, show: 0, col: '#4cc9f0', name: o.twoP ? 'Player 2' : 'CPU' }];
+  const players = [{ pos: 0, show: 0, col: '#ff4d6d', name: o.twoP ? 'Player 1' : 'You' }, { pos: 0, show: 0, col: '#4cc9f0', name: o.twoP ? 'Player 2' : 'CPU' }];
   let turn = 0, die = 1, rolling = 0, moving = null, t = 0, msg = '', pending = null;
+  api.turnOf = () => turn;
+  api.busy = () => rolling > 0 || !!moving || pending != null;
   api.status(o.twoP ? 'Player 1 — roll the dice' : 'Your turn — tap to roll');
 
   function roll() {
@@ -19,7 +21,7 @@ Hub.register('snakesladders', (api, o) => {
 
   function finishRoll() {
     const p = players[turn];
-    die = U.randi(1, 6);
+    die = api.randi(1, 6); // seeded when playing online
     let to = p.pos + die;
     if (to > 100) to = p.pos; // needs an exact roll
     moving = { to, from: p.pos, step: 0, die };

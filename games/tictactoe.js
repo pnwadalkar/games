@@ -8,9 +8,11 @@ Hub.register('tictactoe', (api, o) => {
   const LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
   const b = Array(9).fill(null);
   let turn = 'X', done = false, winLine = null, anim = {};
-  const starter = Hub.LS.get(recKey + ':start', 'X');
-  Hub.LS.set(recKey + ':start', starter === 'X' ? 'O' : 'X');
+  // online both sides must agree who starts, so the host always plays X first
+  const starter = api.net ? 'X' : Hub.LS.get(recKey + ':start', 'X');
+  if (!api.net) Hub.LS.set(recKey + ':start', starter === 'X' ? 'O' : 'X');
   turn = starter;
+  api.turnOf = () => (turn === 'X' ? 0 : 1);
   const showRec = () => api.status(o.twoP ? `X ${rec.x} · O ${rec.o} · Draws ${rec.d}` : `You ${rec.x} · CPU ${rec.o} · Draws ${rec.d}`);
   showRec();
 

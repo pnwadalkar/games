@@ -149,6 +149,10 @@
   $('gIcon').textContent = meta.icon;
   $('gName').textContent = meta.name;
 
+  const qs = new URLSearchParams(location.search);
+  let net = null; // online session (Hub.Online.makeSession) when playing a friend
+  const wantOnline = meta.online && Hub.Online && qs.get('online') && ['host', 'guest'].includes(qs.get('online'));
+
   const stage = $('stage'), pad = $('pad'), overlay = $('overlay'), modal = $('modal');
   const statusEl = $('status'), scoreEl = $('score'), bestEl = $('best');
   const btnPause = $('btnPause'), btnSound = $('btnSound'), btnFs = $('btnFs');
@@ -387,7 +391,7 @@
       // Real-time loop. update(dt) is skipped while paused or over; draw() always runs.
       // Pass anim=true for turn-based games that only animate (no pause button).
       loop(update, draw, anim) {
-        if (!anim) { usesLoop = true; btnPause.hidden = false; }
+        if (!anim) { usesLoop = true; btnPause.hidden = !!net; }
         let last = performance.now(), raf = 0;
         const frame = t => {
           raf = requestAnimationFrame(frame);
@@ -477,6 +481,9 @@
       }
     };
 
+    if (net) Hub.Online.attach(api, net);
+    else { api.randi = U.randi; api.rng = Math.random; }
+
     function press(k, isDown) {
       if (isDown) {
         if (!api.keys[k]) keyFns.forEach(f => f(k, null, null));
@@ -513,10 +520,15 @@
       statusEl.textContent = 'Something went wrong loading this game.';
     }
   }
-  function restart() { start(); }
+  function restart() { if (net) return askRematch(); start(); }
+  function askRematch() {
+    if (!net || net.closed) return;
+    net.send({ t: 'rq' });
+    toast('Rematch requested…', 1800);
+  }
 
   function pause() {
-    if (!S || !S.usesLoop || S.over || modalOpen) return;
+    if (!S || !S.usesLoop || S.over || modalOpen || net) return;
     S.paused = true;
     showModal({
       emoji: '⏸️', title: 'Paused',
@@ -590,7 +602,7 @@
     S._keyUpFns.forEach(f => f(k, e.key, e));
   });
   window.addEventListener('blur', () => { if (S) { S.keys = {}; S.held = {}; } });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && !net) pause(); });
 
   let resizeQueued = false;
   const onResize = () => {
@@ -615,7 +627,41 @@
   };
   const files = (meta.deps || []).concat(meta.engine);
   const loadNext = () => loadScript(files.shift(), () => (files.length ? loadNext() : ready()));
+  const esc = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  function beginOnline() {
+    Hub.Online.boot({
+      role: qs.get('online'), room: qs.get('room'), meta,
+      onFail: msg => showModal({ emoji: '⚠️', title: 'Online play unavailable', html: '<p>' + esc(msg) + '</p>', buttons: [{ label: 'Back to games', primary: true, fn: () => { location.href = './'; } }] }),
+      onReady: sess => { net = sess; setupNet(); start(); }
+    });
+  }
+  function setupNet() {
+    btnPause.hidden = true;
+    $('btnRestart').title = 'Ask for a rematch';
+    const bar = $('netbar');
+    bar.hidden = false;
+    const upd = () => {
+      const you = esc(net.names[net.me]), opp = esc(net.opponent()), t = S && S.turnOf ? S.turnOf() : null;
+      bar.innerHTML = '🌐 <b>' + you + '</b> vs <b>' + opp + '</b>' + (t == null || S.over ? '' : t === net.me ? ' · <span class="yt">Your turn</span>' : ' · ' + opp + '’s turn');
+    };
+    upd(); setInterval(upd, 250);
+    net.on('rq', () => {
+      if (modalOpen && !S.over) return;
+      showModal({ emoji: '🔁', title: 'Rematch?', html: '<p>' + esc(net.opponent()) + ' wants to play again.</p>', buttons: [
+        { label: 'No thanks', fn: () => net.send({ t: 'no' }) },
+        { label: 'Play again', primary: true, fn: () => { const seed = Hub.Online.newSeed(); net.send({ t: 'go', seed }); net.seed = seed; start(); } }
+      ] });
+    });
+    net.on('go', m => { if (isFinite(m.seed)) { net.seed = m.seed >>> 0; hideModal(); start(); } });
+    net.on('no', () => toast(net.opponent() + ' declined the rematch', 2000));
+    net.on('close', () => {
+      if (S) S.over = true;
+      showModal({ emoji: '👋', title: 'Opponent left', html: '<p>' + esc(net.opponent()) + ' has disconnected.</p>', buttons: [{ label: 'Back to games', primary: true, fn: () => { location.href = './'; } }] });
+    });
+  }
+
   const ready = () => {
+    if (wantOnline) return beginOnline();
     const b = Hub.LS.get(bestKey, null);
     const G = Hub.groupOf(meta.id);
     const modes = G && G.variants.length > 1

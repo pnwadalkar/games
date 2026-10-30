@@ -5,6 +5,7 @@ Hub.register('mancala', (api, o) => {
   const ctx = c.ctx;
   // pits 0-5 = player 1 (bottom, left→right), 6 = P1 store, 7-12 = player 2 (top, right→left), 13 = P2 store
   let b = [4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0], turn = 1, done = false, lastPit = null, busy = false;
+  api.turnOf = () => turn - 1;
   const name = p => o.twoP ? 'Player ' + p : p === 1 ? 'You' : 'CPU';
 
   function sow(bd, pit, p) {

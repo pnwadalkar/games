@@ -38,12 +38,15 @@
   L('nqueens', 'N-Queens', { 'nqueens-6': '6×6', 'nqueens-8': '8×8', 'nqueens-10': '10×10' });
   L('binary', 'Binary Puzzle', { 'binary-6': '6×6 Easy', 'binary-8': '8×8 Medium', 'binary-10': '10×10 Hard' });
   L('knights', "Knight's Tour", { 'knights-5': '5×5', 'knights-6': '6×6', 'knights-8': '8×8 (full board)' });
-  L('chess', 'Chess', { 'chess-easy': 'Easy', 'chess-medium': 'Medium', 'chess-hard': 'Hard' }, 'Classic chess against the computer.');
+  L('chess', 'Chess', { 'chess-easy': 'Easy', 'chess-medium': 'Medium', 'chess-hard': 'Hard', 'chess-2p': '2 Players' }, 'Classic chess against the computer.');
   L('battleship', 'Battleship', { 'battleship': 'Normal', 'battleship-hard': 'Hard' });
   L('snakesladders', 'Snakes & Ladders', { 'snakesladders': 'vs CPU', 'snakesladders-2p': '2 Players' });
   L('wordhunt', 'Word Hunt', { 'wordhunt': '4×4', 'wordhunt-5': '5×5' });
   L('quiz-capitals', 'World Capitals', { 'quiz-capitals': 'Easy (30 countries)', 'quiz-capitals-hard': 'All (70 countries)' });
   L('nback', 'N-Back', { 'nback-1': '1-Back', 'nback-2': '2-Back', 'nback-3': '3-Back' }, 'Train your working memory.');
   L('airhockey', 'Air Hockey', { 'airhockey': 'Normal CPU', 'airhockey-hard': 'Hard CPU' }, 'Slam the puck into the goal. First to 7.');
+  // 2-player games that can be played between two accounts over the internet (turn based, deterministic)
+  ['tictactoe-2p', 'connect4-2p', 'reversi-2p', 'checkers-2p', 'gomoku-2p', 'dots-2p', 'mancala-2p', 'pig-2p', 'snakesladders-2p', 'chess-2p']
+    .forEach(id => { const g = Hub.find(id); if (g) g.online = true; });
   Hub.buildGroups();
 })();

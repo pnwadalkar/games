@@ -1,4 +1,4 @@
-// Chess vs the computer (alpha-beta search). You play white. No castling or en passant; pawns promote to queens.
+// Chess vs the computer (alpha-beta search) or a second player. You play white. No castling or en passant; pawns promote to queens.
 Hub.register('chess', (api, o) => {
   const S = 480, CS = 60, DEPTH = o.depth || 2;
   const c = api.canvas(S, S);
@@ -10,6 +10,12 @@ Hub.register('chess', (api, o) => {
   const VAL = { p: 100, n: 320, b: 335, r: 500, q: 900, k: 0 };
   const isW = ch => ch && ch === ch.toUpperCase(), side = ch => (isW(ch) ? 'w' : 'b');
   let sel = -1, targets = [], turn = 'w', over = false, last = null, think = false, plies = 0, check = false, anim = null, t = 0;
+  api.turnOf = () => (turn === 'w' ? 0 : 1);
+  // the online guest plays black, so turn the board around for them
+  const flip = !!(api.net && api.net.me === 1);
+  const place = sq => { const r = sq >> 3, k = sq & 7; return flip ? [(7 - k) * CS, (7 - r) * CS] : [k * CS, r * CS]; };
+  const sqAt = (x, y) => { const r = Math.floor(y / CS), k = Math.floor(x / CS); return r < 0 || k < 0 || r > 7 || k > 7 ? -1 : r * 8 + k; };
+  if (flip) api.canon = (x, y) => [S - x, S - y]; // clicks are mapped back to white's view before they are shared
 
   const KN = [[1, 2], [2, 1], [-1, 2], [-2, 1], [1, -2], [2, -1], [-1, -2], [-2, -1]];
   const KG = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
@@ -107,25 +113,27 @@ Hub.register('chess', (api, o) => {
     check = attacked(bd, kingSq(bd, turn), turn === 'w' ? 'b' : 'w');
     if (!ms.length) {
       over = true;
-      if (check) api.end({ win: turn === 'b', title: turn === 'b' ? 'Checkmate — you win!' : 'Checkmate', msg: turn === 'b' ? 'Well played!' : 'The computer wins this one.', emoji: '♚' });
+      if (check && o.twoP) api.end({ win: true, title: 'Checkmate — ' + (turn === 'b' ? 'White' : 'Black') + ' wins!', msg: 'Well played, both of you.', emoji: '♚' });
+      else if (check) api.end({ win: turn === 'b', title: turn === 'b' ? 'Checkmate — you win!' : 'Checkmate', msg: turn === 'b' ? 'Well played!' : 'The computer wins this one.', emoji: '♚' });
       else api.end({ title: 'Stalemate', msg: 'No legal moves — it is a draw.', emoji: '🤝', sound: 'bad' });
       return;
     }
     if (plies > 300) { over = true; api.end({ title: 'Draw', msg: 'Move limit reached.', emoji: '🤝' }); return; }
-    api.status(turn === 'w' ? (check ? 'Check! Your move' : 'Your move') : 'Computer thinking…');
-    if (turn === 'b') { think = true; api.after(350, () => { cpuMove(); think = false; }); }
+    if (o.twoP) api.status((turn === 'w' ? 'White' : 'Black') + ' to move' + (check ? ' — check!' : ''));
+    else api.status(turn === 'w' ? (check ? 'Check! Your move' : 'Your move') : 'Computer thinking…');
+    if (turn === 'b' && !o.twoP) { think = true; api.after(350, () => { cpuMove(); think = false; }); }
   }
   if (api.debug) api.debug({ legal, make, search, board: () => bd, attacked, kingSq });
-  api.status('Your move (white)');
+  api.status(o.twoP ? 'White to move' : 'Your move (white)');
 
   api.pointer(c, {
     down: (x, y) => {
-      if (over || think || turn !== 'w') return;
-      const sq = Math.floor(y / CS) * 8 + Math.floor(x / CS);
-      if (sq < 0 || sq > 63) return;
+      if (over || think || (!o.twoP && turn !== 'w')) return;
+      const sq = sqAt(x, y);
+      if (sq < 0) return;
       const m = targets.find(mv => mv[1] === sq);
       if (m) { sel = -1; targets = []; apply(m); return; }
-      if (bd[sq] && isW(bd[sq])) { sel = sq; targets = legal(bd, 'w').filter(mv => mv[0] === sq); api.sfx('click'); }
+      if (bd[sq] && side(bd[sq]) === turn) { sel = sq; targets = legal(bd, turn).filter(mv => mv[0] === sq); api.sfx('click'); }
       else { sel = -1; targets = []; }
     }
   });
@@ -145,7 +153,7 @@ Hub.register('chess', (api, o) => {
     c.clear('#1a1430');
     const kw = check ? kingSq(bd, turn) : -1;
     for (let r = 0; r < 8; r++) for (let k = 0; k < 8; k++) {
-      const sq = r * 8 + k, x = k * CS, y = r * CS;
+      const sq = r * 8 + k, [x, y] = place(sq);
       ctx.__flat = true;
       ctx.fillStyle = (r + k) % 2 ? '#8a6a4a' : '#ecd9b0'; ctx.fillRect(x, y, CS, CS);
       if (last && (last[0] === sq || last[1] === sq)) { ctx.fillStyle = 'rgba(255,226,122,.35)'; ctx.fillRect(x, y, CS, CS); }
@@ -155,10 +163,10 @@ Hub.register('chess', (api, o) => {
     }
     for (let sq = 0; sq < 64; sq++) {
       const ch = bd[sq]; if (!ch) continue;
-      let x = (sq & 7) * CS, y = (sq >> 3) * CS;
-      if (anim && anim.to === sq) { const fx = (anim.from & 7) * CS, fy = (anim.from >> 3) * CS; x = U.lerp(fx, x, anim.p); y = U.lerp(fy, y, anim.p) - Math.sin(anim.p * Math.PI) * 10; }
+      let [x, y] = place(sq);
+      if (anim && anim.to === sq) { const [fx, fy] = place(anim.from); x = U.lerp(fx, x, anim.p); y = U.lerp(fy, y, anim.p) - Math.sin(anim.p * Math.PI) * 10; }
       piece(ch, x, y, 1);
     }
-    targets.forEach(m => { const x = (m[1] & 7) * CS + CS / 2, y = (m[1] >> 3) * CS + CS / 2; ctx.globalAlpha = .75; if (bd[m[1]]) { ctx.strokeStyle = '#ff4d6d'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x, y, CS * .42, 0, 7); ctx.stroke(); } else U.circle(ctx, x, y, CS * .14, '#2ee59d'); ctx.globalAlpha = 1; });
+    targets.forEach(m => { const [px, py] = place(m[1]), x = px + CS / 2, y = py + CS / 2; ctx.globalAlpha = .75; if (bd[m[1]]) { ctx.strokeStyle = '#ff4d6d'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x, y, CS * .42, 0, 7); ctx.stroke(); } else U.circle(ctx, x, y, CS * .14, '#2ee59d'); ctx.globalAlpha = 1; });
   }
 });

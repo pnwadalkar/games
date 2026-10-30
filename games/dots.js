@@ -6,10 +6,12 @@ Hub.register('dots', (api, o) => {
   // h[r][k]: horizontal line at row r (0..N) between dots k..k+1; v[r][k]: vertical at col k (0..N) between rows r..r+1
   const h = U.grid(N, N + 1, 0), v = U.grid(N + 1, N, 0), owner = U.grid(N, N, 0);
   let turn = 1, sc = [0, 0, 0], done = false, last = null;
+  api.turnOf = () => turn - 1;
   const COL = ['', '#00d4ff', '#ff5c7a'];
   const name = p => o.twoP ? 'Player ' + p : p === 1 ? 'You' : 'CPU';
 
-  const sides = (r, k) => h[r][k] + h[r + 1][k] + v[r][k] + v[r][k + 1];
+  // lines are stored as the player number (1 or 2), so count the drawn ones instead of adding the numbers up
+  const sides = (r, k) => (h[r][k] ? 1 : 0) + (h[r + 1][k] ? 1 : 0) + (v[r][k] ? 1 : 0) + (v[r][k + 1] ? 1 : 0);
   function boxesOf(type, r, k) {
     return type === 'h' ? [[r - 1, k], [r, k]].filter(([a]) => a >= 0 && a < N) : [[r, k - 1], [r, k]].filter(([, z]) => z >= 0 && z < N);
   }

@@ -67,6 +67,7 @@
   A('chess', 'chess-easy', 'Chess Easy', 'board', '♟️', ['#8d6e63', '#3e2723'], 'Chess against a gentle computer.', CH, Object.assign({ opt: { depth: 1 }, tags: 'kings' }, NONE));
   A('chess', 'chess-medium', 'Chess Medium', 'board', '♟️', ['#8d6e63', '#3e2723'], 'Chess against a thinking computer.', CH, Object.assign({ opt: { depth: 2 } }, NONE));
   A('chess', 'chess-hard', 'Chess Hard', 'board', '♟️', ['#8d6e63', '#3e2723'], 'Chess against a stronger computer.', CH, Object.assign({ opt: { depth: 3 } }, NONE));
+  A('chess', 'chess-2p', 'Chess 2P', 'board', '♟️', ['#8d6e63', '#3e2723'], 'Two players, one board.', CH, two({ opt: { twoP: true, depth: 1 } }));
   A('battleship', 'battleship', 'Battleship', 'board', '🚢', ['#1a75bc', '#071e3d'], 'Sink the enemy fleet before they sink yours.',
     '<b>Mouse / touch:</b> shuffle your fleet and press Start, then tap squares in the top grid to fire. A hit lets you fire again.', Object.assign({ opt: {}, tags: 'ships naval' }, NONE));
   A('battleship', 'battleship-hard', 'Battleship Hard', 'board', '🚢', ['#1a75bc', '#071e3d'], 'The computer hunts in a smarter pattern.',

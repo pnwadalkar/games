@@ -7,6 +7,8 @@ Hub.register('connect4', (api, o) => {
   const rec = Hub.LS.get(recKey, { a: 0, b: 0, d: 0 });
   const b = U.grid(COLS, ROWS, 0); // 1 = player one (red), 2 = player two / CPU (yellow)
   let turn = 1, done = false, hoverCol = 3, drops = [], winCells = null;
+  api.turnOf = () => turn - 1;
+  api.busy = () => drops.length > 0; // ignores clicks while a disc is falling
   const showRec = () => api.status(o.twoP ? `Red ${rec.a} · Yellow ${rec.b} · Draws ${rec.d}` : `You ${rec.a} · CPU ${rec.b} · Draws ${rec.d}`);
   showRec();
 

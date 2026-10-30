@@ -49,6 +49,16 @@
       a.querySelector('.vb').textContent = Hub.bestText(v);
       list.appendChild(a);
     });
+    // games with an online-capable 2-player mode get an invite option
+    const ov = G.variants.find(v => v.online);
+    if (ov && Hub.Online && Hub.Online.available()) {
+      const a = document.createElement('a');
+      a.className = 'vopt online'; a.href = '#';
+      a.innerHTML = '<span class="vn">🌐 Play online with a friend</span><span class="vb"></span><span class="go">▶</span>';
+      a.querySelector('.vb').textContent = Hub.Auth.current() ? 'invite by username or link' : 'invite by link';
+      a.onclick = e => { e.preventDefault(); location.href = playUrl(ov.id) + '&online=host&room=' + Hub.Online.newCode(); };
+      list.appendChild(a);
+    }
     box.appendChild(list);
     $('pick').hidden = false;
     const first = list.querySelector('a');

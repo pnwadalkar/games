@@ -39,6 +39,22 @@ The home page has search, categories, favorites and a "continue playing" row.
 
 `login.html` has **Sign in** and **Create account** tabs, plus **Play as guest**. Accounts are stored in the browser's `localStorage` on that device (passwords are salted PBKDF2 hashes), so there is no server and no sync between devices. Each account keeps its own best scores, favorites and recent games. Guest data stays in the default slot, so scores saved before accounts existed are still there.
 
+### Online play (two accounts, anywhere in the world)
+
+Ten turn-based games can be played between two people on different devices: Tic-Tac-Toe, Connect Four, Reversi, Checkers, Gomoku, Dots and Boxes, Mancala, Pig Dice, Snakes & Ladders and Chess. Open a game and choose **🌐 Play online with a friend**.
+
+- **Invite an account:** sign in, type your friend's username and press Invite. If they have GameNest open and are signed in, they get a popup and can Accept or Decline.
+- **Invite by link:** copy the link and send it by any chat app. It works for anyone, signed in or not.
+- Either player can ask for a **rematch**. If someone leaves, the other is told.
+
+How it works: there is no game server. Browsers connect directly (WebRTC) using the free public PeerJS broker for the handshake (`js/peerjs.min.js` is vendored). Both browsers run the same game with the same random seed, and each click is sent to the other side. Only the player whose turn it is can click, and the other copy replays the click in the same order, so the two games stay identical (`js/net.js`). A game opts in by setting `api.turnOf = () => 0 | 1`, and optionally `api.busy` (ignore clicks while animating) and `api.canon` (if it shows the board from the other side). Dice use `api.randi` so both sides roll the same numbers.
+
+Limits worth knowing:
+- Accounts are still stored in each browser, with no central account database. A username identifies you to your friend, but nothing proves who owns it, so treat it as a nickname, not a login. Real accounts that follow you across devices need a backend such as Firebase or Supabase.
+- Invites by username only reach a friend who currently has the site open and is signed in. Use the link otherwise.
+- Real-time games (Pong, Air Hockey) and Battleship (hidden boards) are not online yet.
+- Very strict networks (some school or corporate firewalls) can block peer-to-peer connections.
+
 ### 2.5D look
 
 `js/fx3d.js` wraps the canvas 2D context so every game gets depth without per-game changes: shapes get an extruded shadow and a glossy bevel, circles get sphere shading, thick strokes become tubes, and background fills get a vignette plus a perspective floor. Games can also call `U.box`, `U.cyl`, `U.blob` and `U.shade` (in `js/engine.js`) for true extruded blocks, pipes and contact shadows. It switches itself off on slow devices, and `?flat=1` turns it off by hand. Dense grid games (Sudoku, Nonogram, Word Search, Number Hunt, Number Memory) skip it.
@@ -57,6 +73,7 @@ js/core.js          accounts, per-user storage + catalog helpers
 js/registry.js      the first set of games, their modes and how-to text
 js/registry_more.js the newer games (same format)
 js/groups.js        names each game and its modes; builds the one-card-per-game catalog
+js/net.js           online play: invites, rooms, click syncing (uses js/peerjs.min.js)
 js/hub.js           home page logic
 js/engine.js        player runtime: canvas scaling, input, touch pad, scores, sound, overlays
 games/*.js          one file per game engine (variants share an engine)

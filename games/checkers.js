@@ -7,6 +7,7 @@ Hub.register('checkers', (api, o) => {
   const b = U.grid(N, N, 0);
   for (let r = 0; r < N; r++) for (let k = 0; k < N; k++) if ((r + k) % 2 === 1) { if (r < 3) b[r][k] = -1; else if (r > 4) b[r][k] = 1; }
   let turn = 1, sel = null, path = [], done = false, quiet = 0, lastMove = null;
+  api.turnOf = () => (turn > 0 ? 0 : 1);
 
   const inB = (r, k) => r >= 0 && k >= 0 && r < N && k < N;
   const dirsOf = v => Math.abs(v) === 2 ? [[1, 1], [1, -1], [-1, 1], [-1, -1]] : v > 0 ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]];

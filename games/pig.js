@@ -4,6 +4,8 @@ Hub.register('pig', (api, o) => {
   const c = api.canvas(W, H);
   const ctx = c.ctx;
   let sc = [0, 0], turn = 0, pot = 0, die = 1, rolling = 0, busy = false, msg = 'Your turn — roll!';
+  api.turnOf = () => turn;
+  api.busy = () => busy || rolling > 0;
   const name = p => o.twoP ? 'Player ' + (p + 1) : p === 0 ? 'You' : 'CPU';
 
   function roll() {
@@ -11,7 +13,7 @@ Hub.register('pig', (api, o) => {
     busy = true; rolling = .6;
     api.sfx('click');
     api.after(600, () => {
-      die = U.randi(1, 6);
+      die = api.randi(1, 6); // seeded when playing online, so both players see the same roll
       busy = false;
       if (die === 1) { msg = name(turn) + ' rolled a 1 — turn lost!'; pot = 0; api.sfx('bad'); swap(); }
       else {

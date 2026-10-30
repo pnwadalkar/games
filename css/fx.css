@@ -159,3 +159,18 @@ body.auth { min-height: 100vh; min-height: 100dvh; display: grid; place-items: c
 .var-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 10px 0 2px; }
 .var-row a { padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--bg2); border: 1px solid var(--line); color: var(--muted); }
 .var-row a.on { background: var(--text); color: #10142b; border-color: var(--text); }
+
+/* ---------- online play ---------- */
+.vopt.online { background: linear-gradient(135deg, #2b3a9e, #6a3fd1); border-color: rgba(255,255,255,.25); }
+.vopt.online .vb { color: rgba(255,255,255,.75); }
+.netbar { flex: none; text-align: center; font-size: 13px; padding: 5px 10px; color: var(--muted); background: rgba(124,92,255,.12); border-bottom: 1px solid rgba(255,255,255,.06); }
+.netbar[hidden] { display: none; }
+.netbar b { color: var(--text); }
+.netbar .yt { color: var(--good); font-weight: 800; }
+.net-md { text-align: center; }
+.net-md .lob-lbl { text-align: left; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin: 14px 0 6px; }
+.net-md .lob-row { display: flex; gap: 8px; }
+.net-md .lob-in { flex: 1; min-width: 0; background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; font-size: 14px; outline: none; color: var(--text); user-select: text; -webkit-user-select: text; }
+.net-md .lob-in:focus { border-color: var(--accent); }
+.net-md .lob-note { font-size: 12px; margin-top: 12px; }
+.net-md .btn[disabled] { opacity: .5; pointer-events: none; }

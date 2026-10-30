@@ -5,6 +5,7 @@ Hub.register('gomoku', (api, o) => {
   const ctx = c.ctx;
   const b = U.grid(N, N, 0);
   let turn = 1, done = false, last = null, winLine = null, moves = 0;
+  api.turnOf = () => turn - 1;
   const D4 = [[0, 1], [1, 0], [1, 1], [1, -1]];
   const inB = (r, k) => r >= 0 && k >= 0 && r < N && k < N;
 
