@@ -63,21 +63,18 @@ Hub.register('stack', (api) => {
     g.addColorStop(1, `hsl(${(hue + tower.length * 9 + 200) % 360}, 45%, 32%)`);
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(0,0,0,.25)';
+    ctx.fillRect(0, yOf(0) + BH, W, H);
+    const base = tower[0];
+    U.blob(ctx, base.x + base.w / 2 + 10, yOf(0) + BH + 8, base.w * .62, 14, .45);
+    // bottom-up so each block's front face covers the top face of the one below
     tower.forEach((b, i) => {
       const y = yOf(i);
       if (y > H || y < -BH) return;
-      ctx.fillStyle = col(i);
-      ctx.fillRect(b.x, y, b.w, BH);
-      ctx.fillStyle = 'rgba(0,0,0,.15)';
-      ctx.fillRect(b.x, y + BH - 5, b.w, 5);
+      U.box(ctx, b.x, y, b.w, BH, col(i), 16);
     });
-    ctx.fillStyle = 'rgba(0,0,0,.25)';
-    ctx.fillRect(0, yOf(0) + BH, W, H);
-    falling.forEach(f => { ctx.fillStyle = col(f.i); ctx.fillRect(f.x, f.y, f.w, BH); });
-    if (cur) {
-      ctx.fillStyle = col(tower.length);
-      ctx.fillRect(cur.x, yOf(tower.length), cur.w, BH);
-    }
+    falling.forEach(f => U.box(ctx, f.x, f.y, f.w, BH, col(f.i), 16));
+    if (cur) U.box(ctx, cur.x, yOf(tower.length), cur.w, BH, col(tower.length), 16);
     U.text(ctx, score, W / 2, 70, 56, '#fff', 'center', 900);
     if (score === 0) U.text(ctx, 'Tap / Space to drop', W / 2, 120, 18, 'rgba(255,255,255,.8)');
   }

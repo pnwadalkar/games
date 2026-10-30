@@ -46,10 +46,9 @@ Hub.register('racer', (api) => {
   }, draw);
 
   function drawCar(x, y, w, h, col, mine) {
-    ctx.fillStyle = 'rgba(0,0,0,.3)';
-    U.rr(ctx, x + 3, y + 5, w, h, 9); ctx.fill();
-    ctx.fillStyle = col;
-    U.rr(ctx, x, y, w, h, 9); ctx.fill();
+    U.blob(ctx, x + w / 2 + 3, y + h - 2, w * .8, h * .22, .45);
+    U.box(ctx, x, y, w, h, col, 10);
+    // cabin sits on top of the body
     ctx.fillStyle = 'rgba(20,30,60,.85)';
     U.rr(ctx, x + 5, y + (mine ? 16 : h - 30), w - 10, 14, 4); ctx.fill();
     U.rr(ctx, x + 6, y + (mine ? h - 22 : 10), w - 12, 10, 3); ctx.fill();

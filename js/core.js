@@ -3,14 +3,95 @@
   'use strict';
   const Hub = window.Hub = window.Hub || {};
 
-  Hub.LS = {
-    get(k, d) {
-      try { const v = localStorage.getItem('mg:' + k); return v == null ? d : JSON.parse(v); }
-      catch (e) { return d; }
-    },
-    set(k, v) {
-      try { localStorage.setItem('mg:' + k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ }
+  // ---------- accounts ----------
+  // Accounts live in this browser only (no server). Passwords are stored as salted PBKDF2 hashes.
+  // Each signed-in user gets their own saved scores, favorites and recents; guests use the shared default slot.
+  const AUTH_KEY = 'mg_auth:users', SESSION_KEY = 'mg_auth:session';
+  const rawGet = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
+  const rawSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+  const hex = buf => Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, '0')).join('');
+  const normName = n => String(n || '').trim().toLowerCase();
+
+  async function hashPw(pw, salt) {
+    const enc = new TextEncoder();
+    if (window.crypto && crypto.subtle) {
+      const key = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits']);
+      const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: enc.encode(salt), iterations: 150000, hash: 'SHA-256' }, key, 256);
+      return 'p1:' + hex(bits);
     }
+    // Insecure contexts (plain http on a LAN address) have no crypto.subtle; fall back to a simple mix.
+    let h = 2166136261;
+    const str = salt + pw;
+    for (let r = 0; r < 2000; r++) for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    return 'f1:' + h.toString(16);
+  }
+  const newSalt = () => {
+    const a = new Uint8Array(16);
+    if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(a); else for (let i = 0; i < 16; i++) a[i] = Math.random() * 256;
+    return hex(a);
+  };
+
+  const Auth = Hub.Auth = {
+    users: () => rawGet(AUTH_KEY, {}),
+    // The signed-in user's record, or null for a guest.
+    current() {
+      const id = rawGet(SESSION_KEY, null);
+      const u = id && Auth.users()[id];
+      return u ? { id, name: u.name, color: u.color, created: u.created } : null;
+    },
+    async register(name, pw) {
+      name = String(name || '').trim();
+      if (!/^[\w .-]{3,20}$/.test(name)) throw new Error('Username must be 3–20 letters, numbers, spaces, dots or dashes.');
+      if (String(pw || '').length < 6) throw new Error('Password must be at least 6 characters.');
+      const users = Auth.users(), id = normName(name);
+      if (users[id]) throw new Error('That username is already taken on this device.');
+      const salt = newSalt();
+      users[id] = { name, salt, hash: await hashPw(pw, salt), created: Date.now(), color: Math.floor(Math.random() * 360) };
+      if (!rawSet(AUTH_KEY, users)) throw new Error('Could not save the account. Is browser storage blocked?');
+      rawSet(SESSION_KEY, id);
+      return Auth.current();
+    },
+    async login(name, pw) {
+      const id = normName(name), u = Auth.users()[id];
+      if (!u || (await hashPw(pw, u.salt)) !== u.hash) throw new Error('Wrong username or password.');
+      rawSet(SESSION_KEY, id);
+      return Auth.current();
+    },
+    logout() { try { localStorage.removeItem(SESSION_KEY); } catch (e) { /* ignore */ } }
+  };
+
+  // ---------- per-user storage ----------
+  const prefix = () => { const u = Auth.current(); return u ? 'mg:u:' + u.id + ':' : 'mg:'; };
+  Hub.LS = {
+    get: (k, d) => rawGet(prefix() + k, d),
+    set: (k, v) => { rawSet(prefix() + k, v); }
+  };
+
+  // Small avatar + menu shown in the header of every page.
+  Hub.mountUser = function (box) {
+    const u = Auth.current();
+    box.innerHTML = '';
+    const next = encodeURIComponent(location.pathname.split('/').pop() + location.search);
+    if (!u) {
+      const a = document.createElement('a');
+      a.className = 'pill-btn ghost'; a.href = 'login.html?next=' + next; a.textContent = 'Sign in';
+      box.appendChild(a);
+      return;
+    }
+    const b = document.createElement('button');
+    b.className = 'avatar'; b.title = u.name; b.setAttribute('aria-label', 'Account menu');
+    b.style.setProperty('--h', u.color);
+    b.textContent = u.name.charAt(0).toUpperCase();
+    const m = document.createElement('div');
+    m.className = 'umenu'; m.hidden = true;
+    const played = Object.keys(localStorage).filter(k => k.startsWith('mg:u:' + u.id + ':best:')).length;
+    m.innerHTML = '<div class="un"></div><div class="us"></div><button class="btn out">Sign out</button>';
+    m.querySelector('.un').textContent = u.name;
+    m.querySelector('.us').textContent = played + ' game' + (played === 1 ? '' : 's') + ' with a saved best';
+    m.querySelector('.out').onclick = () => { Auth.logout(); location.href = 'login.html'; };
+    b.onclick = e => { e.stopPropagation(); m.hidden = !m.hidden; };
+    document.addEventListener('click', () => { m.hidden = true; });
+    box.appendChild(b); box.appendChild(m);
   };
 
   Hub.CATS = [

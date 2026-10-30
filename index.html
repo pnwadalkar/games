@@ -9,6 +9,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/fx.css">
 </head>
 <body>
   <header class="top">
@@ -19,13 +20,14 @@
         <input id="q" type="search" placeholder="Search games…" autocomplete="off" aria-label="Search games">
       </label>
       <button class="pill-btn" id="random" title="Play a random game">🎲 <span class="lbl">Random</span></button>
+      <div class="user" id="user"></div>
     </div>
   </header>
 
   <div class="wrap">
     <section class="hero">
       <h1>Play <span id="count">lots of</span> mini games</h1>
-      <p>Free, no install, no sign-up. Works with keyboard, mouse and touch.</p>
+      <p>Free, no install. Sign in to save your scores, or just jump in as a guest.</p>
     </section>
 
     <nav class="chips" id="chips" aria-label="Categories"></nav>

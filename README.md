@@ -33,13 +33,25 @@ Every game has:
 
 The home page has search, categories, favorites and a "continue playing" row.
 
+### Accounts
+
+`login.html` has **Sign in** and **Create account** tabs, plus **Play as guest**. Accounts are stored in the browser's `localStorage` on that device (passwords are salted PBKDF2 hashes), so there is no server and no sync between devices. Each account keeps its own best scores, favorites and recent games. Guest data stays in the default slot, so scores saved before accounts existed are still there.
+
+### 2.5D look
+
+`js/fx3d.js` wraps the canvas 2D context so every game gets depth without per-game changes: shapes get an extruded shadow and a glossy bevel, circles get sphere shading, thick strokes become tubes, and background fills get a vignette plus a perspective floor. Games can also call `U.box`, `U.cyl`, `U.blob` and `U.shade` (in `js/engine.js`) for true extruded blocks, pipes and contact shadows. It switches itself off on slow devices, and `?flat=1` turns it off by hand. Dense grid games (Sudoku, Nonogram, Word Search, Number Hunt, Number Memory) skip it.
+
 ## Project layout
 
 ```
 index.html          home page (catalog)
 play.html           game player shell
-css/style.css       all styles
-js/core.js          shared storage + catalog helpers
+css/style.css       base styles
+css/fx.css          2.5D polish, account menu and login styles
+login.html          sign in / create account
+js/login.js         login page logic
+js/fx3d.js          2.5D canvas effects
+js/core.js          accounts, per-user storage + catalog helpers
 js/registry.js      the list of games, their variants and how-to text
 js/hub.js           home page logic
 js/engine.js        player runtime: canvas scaling, input, touch pad, scores, sound, overlays

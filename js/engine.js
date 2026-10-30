@@ -38,6 +38,54 @@
       ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
     },
     hit: (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y,
+    // ---- 2.5D drawing helpers ----
+    // shade(color, k): lighten (k > 0) or darken (k < 0) any CSS colour; returns an rgb() string.
+    shade(color, k) {
+      const key = color + '|' + k;
+      if (U._shadeCache[key]) return U._shadeCache[key];
+      const g = U._sctx || (U._sctx = document.createElement('canvas').getContext('2d'));
+      g.fillStyle = '#000'; g.fillStyle = color;
+      const hex = g.fillStyle;
+      let r = 0, gg = 0, b = 0;
+      if (hex.charAt(0) === '#') { r = parseInt(hex.substr(1, 2), 16); gg = parseInt(hex.substr(3, 2), 16); b = parseInt(hex.substr(5, 2), 16); }
+      else { const m = hex.match(/[\d.]+/g) || []; r = +m[0]; gg = +m[1]; b = +m[2]; }
+      const t = k < 0 ? 0 : 255, a = Math.abs(k);
+      const out = 'rgb(' + Math.round(r + (t - r) * a) + ',' + Math.round(gg + (t - gg) * a) + ',' + Math.round(b + (t - b) * a) + ')';
+      return (U._shadeCache[key] = out);
+    },
+    _shadeCache: {},
+    // Extruded box seen from slightly above and to the right: front, top and side faces.
+    box(ctx, x, y, w, h, color, depth) {
+      const d = depth == null ? Math.min(w, h) * .35 : depth, ox = d * .7, oy = -d * .7;
+      ctx.__flat = true;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + ox, y + oy); ctx.lineTo(x + w + ox, y + oy); ctx.lineTo(x + w, y); ctx.closePath();
+      ctx.fillStyle = U.shade(color, .28); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(x + w, y); ctx.lineTo(x + w + ox, y + oy); ctx.lineTo(x + w + ox, y + h + oy); ctx.lineTo(x + w, y + h); ctx.closePath();
+      ctx.fillStyle = U.shade(color, -.32); ctx.fill();
+      const g = ctx.createLinearGradient(0, y, 0, y + h);
+      g.addColorStop(0, U.shade(color, .12)); g.addColorStop(1, U.shade(color, -.12));
+      ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(x, y, w, Math.max(1, h * .08));
+      ctx.__flat = false;
+    },
+    // Upright cylinder (pipes, pillars): horizontal light-to-shadow gradient.
+    cyl(ctx, x, y, w, h, color) {
+      ctx.__flat = true;
+      const g = ctx.createLinearGradient(x, 0, x + w, 0);
+      g.addColorStop(0, U.shade(color, -.35)); g.addColorStop(.28, U.shade(color, .3));
+      g.addColorStop(.5, color); g.addColorStop(1, U.shade(color, -.42));
+      ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+      ctx.__flat = false;
+    },
+    // Soft contact shadow under an object.
+    blob(ctx, x, y, rx, ry, a) {
+      ctx.__flat = true;
+      ctx.save(); ctx.translate(x, y); ctx.scale(1, ry / rx);
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+      g.addColorStop(0, 'rgba(0,0,0,' + (a == null ? .4 : a) + ')'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, rx, 0, Math.PI * 2); ctx.fill();
+      ctx.restore(); ctx.__flat = false;
+    },
     // Playing cards: {r: 1..13, s: 0..3 (♠♥♦♣)}; deck() returns a shuffled 52-card deck.
     SUITS: ['♠', '♥', '♦', '♣'],
     RANKS: ['', 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'],
@@ -74,6 +122,7 @@
   if (!meta) { location.replace('./'); return; }
 
   document.title = meta.name + ' · GameNest';
+  Hub.mountUser($('user'));
   $('gIcon').textContent = meta.icon;
   $('gName').textContent = meta.name;
 
@@ -553,4 +602,5 @@
     });
   };
   loadNext();
+  if (new URLSearchParams(location.search).get('auto')) { const t = setInterval(() => { if (modalPrimary) { clearInterval(t); modalPrimary.click(); } }, 50); }
 })();

@@ -8,6 +8,7 @@
   let favs = Hub.LS.get('favs', []);
 
   $('count').textContent = GAMES.length;
+  Hub.mountUser($('user'));
 
   const inCat = (g, c) => c === 'all' || g.cat === c || (c === '2p' && g.twoP);
 
