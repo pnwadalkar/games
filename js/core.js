@@ -40,6 +40,12 @@
       return u ? { id, name: u.name, color: u.color, created: u.created } : null;
     },
     async register(name, pw) {
+      if (await serverUp()) {
+        const j = await call('POST', 'register', { name, password: pw });
+        adoptRemote(j.user, j.token);
+        await pullData();
+        return Auth.current();
+      }
       name = String(name || '').trim();
       if (!/^[\w .-]{3,20}$/.test(name)) throw new Error('Username must be 3–20 letters, numbers, spaces, dots or dashes.');
       if (String(pw || '').length < 6) throw new Error('Password must be at least 6 characters.');
@@ -52,19 +58,77 @@
       return Auth.current();
     },
     async login(name, pw) {
+      if (await serverUp()) {
+        const j = await call('POST', 'login', { name, password: pw });
+        adoptRemote(j.user, j.token);
+        await pullData();
+        return Auth.current();
+      }
       const id = normName(name), u = Auth.users()[id];
-      if (!u || (await hashPw(pw, u.salt)) !== u.hash) throw new Error('Wrong username or password.');
+      if (!u || !u.hash || (await hashPw(pw, u.salt)) !== u.hash) throw new Error('Wrong username or password.');
       rawSet(SESSION_KEY, id);
       return Auth.current();
     },
-    logout() { try { localStorage.removeItem(SESSION_KEY); } catch (e) { /* ignore */ } }
+    logout() {
+      const t = rawGet(TOKEN_KEY, null);
+      if (t) call('POST', 'logout').catch(() => { /* ignore */ });
+      try { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(TOKEN_KEY); } catch (e) { /* ignore */ }
+    }
   };
+
+  // ---------- server accounts (used when server.js is running) ----------
+  // Accounts then work on every device that can reach the server. Each account's saved data is synced to it.
+  const API = 'api/';
+  const TOKEN_KEY = 'mg_auth:token';
+  let upP = null;
+  const serverUp = () => upP || (upP = (async () => {
+    try { const r = await fetch(API + 'health', { cache: 'no-store' }); const j = await r.json(); return !!(r.ok && j.ok); } catch (e) { return false; }
+  })());
+  async function call(method, path, body) {
+    const h = { 'Content-Type': 'application/json' };
+    const t = rawGet(TOKEN_KEY, null);
+    if (t) h.Authorization = 'Bearer ' + t;
+    const r = await fetch(API + path, { method, headers: h, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' });
+    let j = {}; try { j = await r.json(); } catch (e) { /* empty body */ }
+    if (!r.ok) throw new Error(j.error || 'Could not reach the server.');
+    return j;
+  }
+  function adoptRemote(u, token) {
+    const users = Auth.users();
+    users[u.id] = { name: u.name, color: u.color, created: u.created, remote: true };
+    rawSet(AUTH_KEY, users);
+    rawSet(TOKEN_KEY, token);
+    rawSet(SESSION_KEY, u.id);
+  }
+  const userPrefix = () => 'mg:u:' + rawGet(SESSION_KEY, '') + ':';
+  async function pullData() {
+    if (!rawGet(TOKEN_KEY, null)) return;
+    const j = await call('GET', 'data');
+    const p = userPrefix();
+    for (const [k, v] of Object.entries(j.data || {})) { try { localStorage.setItem(p + k, v); } catch (e) { /* storage full */ } }
+  }
+  let pushTimer = null;
+  async function pushData() {
+    clearTimeout(pushTimer); pushTimer = null;
+    if (!rawGet(TOKEN_KEY, null)) return;
+    const p = userPrefix(), data = {};
+    for (const k of Object.keys(localStorage)) if (k.startsWith(p)) data[k.slice(p.length)] = localStorage.getItem(k);
+    try { await call('PUT', 'data', { data }); } catch (e) { /* offline: try again on the next change */ }
+  }
+  function schedulePush() {
+    if (!rawGet(TOKEN_KEY, null)) return;
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(pushData, 800);
+  }
+  window.addEventListener('pagehide', () => { if (pushTimer) pushData(); });
+  // Refresh this account's data from the server on page load (the first render may show the cached copy).
+  if (rawGet(TOKEN_KEY, null)) serverUp().then(ok => { if (ok) pullData().catch(() => { /* keep local copy */ }); });
 
   // ---------- per-user storage ----------
   const prefix = () => { const u = Auth.current(); return u ? 'mg:u:' + u.id + ':' : 'mg:'; };
   Hub.LS = {
     get: (k, d) => rawGet(prefix() + k, d),
-    set: (k, v) => { rawSet(prefix() + k, v); }
+    set: (k, v) => { rawSet(prefix() + k, v); schedulePush(); }
   };
 
   // Small avatar + menu shown in the header of every page.

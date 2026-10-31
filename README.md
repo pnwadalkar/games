@@ -37,7 +37,10 @@ The home page has search, categories, favorites and a "continue playing" row.
 
 ### Accounts
 
-`login.html` has **Sign in** and **Create account** tabs, plus **Play as guest**. Accounts are stored in the browser's `localStorage` on that device (passwords are salted PBKDF2 hashes), so there is no server and no sync between devices. Each account keeps its own best scores, favorites and recent games. Guest data stays in the default slot, so scores saved before accounts existed are still there.
+`login.html` has **Sign in** and **Create account** tabs, plus **Play as guest**. Passwords are stored as salted PBKDF2 hashes.
+
+- **With the server** (`node server.js`): accounts live in `data/db.json` on that machine, so you can sign in from any device that can reach it. Each account's scores, favorites and recent games sync to the server. The server uses only Node's built-in modules, with no packages to install and no third-party services.
+- **Without the server** (for example on GitHub Pages): accounts are stored in that browser's `localStorage` only, with no sync between devices.
 
 ### Online play (two accounts, anywhere in the world)
 
@@ -50,7 +53,7 @@ Ten turn-based games can be played between two people on different devices: Tic-
 How it works: there is no game server. Browsers connect directly (WebRTC) using the free public PeerJS broker for the handshake (`js/peerjs.min.js` is vendored). Both browsers run the same game with the same random seed, and each click is sent to the other side. Only the player whose turn it is can click, and the other copy replays the click in the same order, so the two games stay identical (`js/net.js`). A game opts in by setting `api.turnOf = () => 0 | 1`, and optionally `api.busy` (ignore clicks while animating) and `api.canon` (if it shows the board from the other side). Dice use `api.randi` so both sides roll the same numbers.
 
 Limits worth knowing:
-- Accounts are still stored in each browser, with no central account database. A username identifies you to your friend, but nothing proves who owns it, so treat it as a nickname, not a login. Real accounts that follow you across devices need a backend such as Firebase or Supabase.
+- Without the server, accounts exist only in each browser. With the server, a username is checked by password, but there is no email recovery or password reset.
 - Invites by username only reach a friend who currently has the site open and is signed in. Use the link otherwise.
 - Real-time games (Pong, Air Hockey) and Battleship (hidden boards) are not online yet.
 - Very strict networks (some school or corporate firewalls) can block peer-to-peer connections.
